@@ -60,8 +60,8 @@ parallel parallelStages
 
 stage 'Release'
   node {
-    mail (to: 'tobias.getrost@1und1.de',
-           from: 'tobias.getrost@getrost.de',
+    mail (to: 'tobias.1getrost@1und1.121212de',
+           from: 'tobias.getrost@getrost.121212de',
            subject: "Job '${env.JOB_NAME}' (${env.BUILD_NUMBER}) successfull",
            body: "To download the artifact go to ${env.BUILD_URL}.");
   }
@@ -69,7 +69,7 @@ stage 'Release'
 def deploy(deploymentFileName) {
   withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'wildFlyManagementCredentials', passwordVariable: 'wildflyMgmtPassword', usernameVariable: 'wildflyMgmtUser']]) {
     def hostname = 'localhost'
-    def managementPort = '8080'
+    def managementPort = '9990'
 
     def deploymentNameWoPath = determineFileName(deploymentFileName)
 
