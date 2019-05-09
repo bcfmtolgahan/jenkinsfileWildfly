@@ -68,7 +68,7 @@ stage 'Release'
 
 def deploy(deploymentFileName) {
   withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'wildFlyManagementCredentials', passwordVariable: 'wildflyMgmtPassword', usernameVariable: 'wildflyMgmtUser']]) {
-    def hostname = '0.0.0.0'
+    def hostname = '35.202.253.48'
     def managementPort = '10190'
 
     def deploymentNameWoPath = determineFileName(deploymentFileName)
