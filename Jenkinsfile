@@ -7,7 +7,7 @@ node {
     git branch: '10.x', url: 'https://github.com/wildfly/quickstart.git'
 
     // setup JDK
-    env.JAVA_HOME="${tool 'JDK_1.8'}"
+    env.JAVA_HOME="${tool 'JDK_8'}"
     env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
 
     // setup maven
