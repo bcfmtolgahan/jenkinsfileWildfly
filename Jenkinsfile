@@ -1,4 +1,3 @@
-
 import groovy.json.JsonSlurper
 
 node {
@@ -36,19 +35,19 @@ node {
     step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
 }
 
+
 node {
     //deploy files
-    stage 'Deploy'
     def warFiles = findFiles glob: '**/target/*.war'
     for (int i=0; i<warFiles.size(); i++) {
     deploy(warFiles[i].path)
+    }
 }
-
-    
+ 
 
 def deploy(deploymentFileName) {
   withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'wildFlyManagementCredentials', passwordVariable: 'wildflyMgmtPassword', usernameVariable: 'wildflyMgmtUser']]) {
-    def hostname = '35.202.253.48'
+    def hostname = 'localhost'
     def managementPort = '9990'
 
     def deploymentNameWoPath = determineFileName(deploymentFileName)
@@ -59,6 +58,7 @@ def deploy(deploymentFileName) {
 
     echo "Deploying ${deploymentFileName} to ${hostname}:${managementPort} ..."
 
+    // details can be found in: http://blog.arungupta.me/deploy-to-wildfly-using-curl-tech-tip-10/
     // step 1: upload archive
     sh "curl -F \"file=@${deploymentFileName}\" --digest http://${env.wildflyMgmtUser}:${env.wildflyMgmtPassword}@${hostname}:${managementPort}/management/add-content > result.txt"
 
