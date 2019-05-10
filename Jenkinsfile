@@ -4,10 +4,8 @@ node {
   stage 'Commit Stage'
 
     git branch: '10.x', url: 'https://github.com/wildfly/quickstart.git'
-    env.JAVA_HOME="${tool 'JDK_8'}"
-    env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
-    def mvnHome = tool name: 'maven_3.3.3', type: 'hudson.tasks.Maven$MavenInstallation'
-    sh "cd kitchensink-angularjs/ && ${mvnHome}/bin/mvn clean install"
+    sh "cd kitchensink-angularjs/" 
+    sh " /var/lib/jenkins/tools/hudson.tasks.Maven_MavenInstallation/maven_3.3.3/bin/mvn clean package -DskipTests "
   
   stage 'Deploy Stage'
     def warFiles = findFiles glob: '**/target/*.war'
@@ -33,26 +31,10 @@ def deploy(deploymentFileName) {
     def bytesValue = extractByteValue(uploadResult)
     if (bytesValue != null) {
       sh "curl -S -H \"Content-Type: application/json\" -d '{\"content\":[{\"hash\": {\"BYTES_VALUE\" : \"${bytesValue}\"}}], \"address\": [{\"deployment\":\"${deploymentNameWoPath}\"}], \"operation\":\"add\", \"enabled\":\"true\"}' --digest http://${env.wildflyMgmtUser}:${env.wildflyMgmtPassword}@${hostname}:${managementPort}/management > result2.txt"
-      def deployResult = readFile 'result2.txt'
-      def failure = hasFailure(deployResult)
-      if (failure != null) {
-        error "Deployment of ${deploymentNameWoPath} failed with error: ${failure}"
-      }
     } else {
       // fail build as deployment was not successfull
       error "Upload of ${deploymentFileName} failed"
     }
-  }
-}
-
-@NonCPS
-def hasFailure(result) {
-  def jsonSlurper = new JsonSlurper()
-  def object = jsonSlurper.parseText(result)
-  if (object.outcome != 'success') {
-    return object.'failure-description'
-  } else {
-    return null
   }
 }
 
