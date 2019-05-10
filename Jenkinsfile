@@ -26,11 +26,32 @@ def deploy(deploymentFileName) {
     sh "curl -S -H \"content-Type: application/json\" -d '{\"operation\":\"remove\", \"address\":[{\"deployment\":\"${deploymentNameWoPath}\"}]}' --digest http://${env.wildflyMgmtUser}:${env.wildflyMgmtPassword}@${hostname}:${managementPort}/management"
     // step 1: upload archive
     sh "curl -F \"file=@${deploymentFileName}\" --digest http://${env.wildflyMgmtUser}:${env.wildflyMgmtPassword}@${hostname}:${managementPort}/management/add-content > result.txt"
-    // step 2: deploy the archive  
-    sh "curl -S -H \"Content-Type: application/json\" -d '{\"content\":[{\"hash\": {\"BYTES_VALUE\" : \"${bytesValue}\"}}], \"address\": [{\"deployment\":\"${deploymentNameWoPath}\"}], \"operation\":\"add\", \"enabled\":\"true\"}' --digest http://${env.wildflyMgmtUser}:${env.wildflyMgmtPassword}@${hostname}:${managementPort}/management > result2.txt"  
+    // step 2: deploy the archive
+    // read result from step 1
+    def uploadResult = readFile 'result.txt'
+    def bytesValue = extractByteValue(uploadResult)
+    if (bytesValue != null) {
+      sh "curl -S -H \"Content-Type: application/json\" -d '{\"content\":[{\"hash\": {\"BYTES_VALUE\" : \"${bytesValue}\"}}], \"address\": [{\"deployment\":\"${deploymentNameWoPath}\"}], \"operation\":\"add\", \"enabled\":\"true\"}' --digest http://${env.wildflyMgmtUser}:${env.wildflyMgmtPassword}@${hostname}:${managementPort}/management > result2.txt"
+    } else {
+      // fail build as deployment was not successfull
+      error "Upload of ${deploymentFileName} failed"
+    }
   }
 }
 
+@NonCPS
+def extractByteValue(uploadResult) {
+  // parse JSON
+  def jsonSlurper = new JsonSlurper()
+  def object = jsonSlurper.parseText(uploadResult)
+  def result = null
+
+  // check that upload was successfull
+  if (object.outcome == 'success') {
+    result = object.result.BYTES_VALUE
+  }
+  return result
+}
 
 @NonCPS
 def determineFileName(path) {
