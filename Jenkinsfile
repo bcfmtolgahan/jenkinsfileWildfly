@@ -14,7 +14,7 @@ node {
     def mvnHome = tool name: 'maven_3.3.3', type: 'hudson.tasks.Maven$MavenInstallation'
 
     // compile and package
-    sh "cd kitchensink-angularjs/ && ${mvnHome}/bin/mvn clean install"
+    sh "cd kitchensink-angularjs/ && ${mvnHome}/bin/mvn clean install -DskipTests"
 
     // archive war file
     archive includes: '**/target/*.war'
