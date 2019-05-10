@@ -3,65 +3,30 @@ import groovy.json.JsonSlurper
 node {
   stage 'Commit Stage'
 
-    // checkout code from 10.x branch
     git branch: '10.x', url: 'https://github.com/wildfly/quickstart.git'
-
-    // setup JDK
     env.JAVA_HOME="${tool 'JDK_8'}"
     env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
-
-    // setup maven
     def mvnHome = tool name: 'maven_3.3.3', type: 'hudson.tasks.Maven$MavenInstallation'
-
-    // compile and package
     sh "cd kitchensink-angularjs/ && ${mvnHome}/bin/mvn clean install"
-
-    // archive war file
-    archive includes: '**/target/*.war'
-
-  stage 'Acceptance tests'
-    // download and extract wildfly if not present
-    if (!fileExists("${env.JENKINS_HOME}/workspace/${env.JOB_NAME}/wildfly-10.0.0.Final")) {
-      sh 'curl http://download.jboss.org/wildfly/10.0.0.Final/wildfly-10.0.0.Final.tar.gz | tar zx'
-    }
-    env.JBOSS_HOME="${env.JENKINS_HOME}/workspace/${env.JOB_NAME}/wildfly-10.0.0.Final"
-
-    // run acceptance tests
-    // the property -Dmaven.test.failure.ignore is used so that the maven command return with exit code 0 on test failures.
-    // the test failures are reported as yellow build using the JUnitResultArchiver in the next step
-    sh "cd kitchensink-angularjs/ && ${mvnHome}/bin/mvn test -Dmaven.test.failure.ignore -Parq-wildfly-managed"
-
-    // publish results
-    step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
-}
-
-
-node {
-    //deploy files
+  
+  stage 'Deploy Stage'
     def warFiles = findFiles glob: '**/target/*.war'
     for (int i=0; i<warFiles.size(); i++) {
     deploy(warFiles[i].path)
     }
 }
- 
 
 def deploy(deploymentFileName) {
   withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'wildFlyManagementCredentials', passwordVariable: 'wildflyMgmtPassword', usernameVariable: 'wildflyMgmtUser']]) {
     def hostname = 'localhost'
     def managementPort = '9990'
-
     def deploymentNameWoPath = determineFileName(deploymentFileName)
-
+    
     // undeploy old war if present
     sh "curl -S -H \"content-Type: application/json\" -d '{\"operation\":\"undeploy\", \"address\":[{\"deployment\":\"${deploymentNameWoPath}\"}]}' --digest http://${env.wildflyMgmtUser}:${env.wildflyMgmtPassword}@${hostname}:${managementPort}/management"
     sh "curl -S -H \"content-Type: application/json\" -d '{\"operation\":\"remove\", \"address\":[{\"deployment\":\"${deploymentNameWoPath}\"}]}' --digest http://${env.wildflyMgmtUser}:${env.wildflyMgmtPassword}@${hostname}:${managementPort}/management"
-
-    echo "Deploying ${deploymentFileName} to ${hostname}:${managementPort} ..."
-
-    // details can be found in: http://blog.arungupta.me/deploy-to-wildfly-using-curl-tech-tip-10/
     // step 1: upload archive
     sh "curl -F \"file=@${deploymentFileName}\" --digest http://${env.wildflyMgmtUser}:${env.wildflyMgmtPassword}@${hostname}:${managementPort}/management/add-content > result.txt"
-
     // step 2: deploy the archive
     // read result from step 1
     def uploadResult = readFile 'result.txt'
