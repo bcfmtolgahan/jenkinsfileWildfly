@@ -5,7 +5,7 @@ node {
     checkout([$class: 'GitSCM', branches: [[name: '10.x']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'git', url: "https://github.com/wildfly/quickstart.git"]]]) 
   
   stage 'Commit Stage'
-    sh " cd kitchensink-angularjs/ && /var/lib/jenkins/tools/hudson.tasks.Maven_MavenInstallation/maven_3.3.3/bin/mvn clean package -DskipTests "
+    sh " cd kitchensink-angularjs/ && /var/lib/jenkins/tools/hudson.tasks.Maven_MavenInstallation/maven_3.3.3/bin/mvn clean install -DskipTests "
     
        
   stage 'Deploy Stage'
