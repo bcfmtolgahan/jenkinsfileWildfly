@@ -13,6 +13,7 @@ node {
     def warFiles = findFiles glob: '**/target/*.war'
     for (int i=0; i<warFiles.size(); i++) {
     deploy(warFiles[i].path)
+    echo "-----------------------------TESTST------------------------------------"  
     echo warFiles[i].path  
     }
 }
