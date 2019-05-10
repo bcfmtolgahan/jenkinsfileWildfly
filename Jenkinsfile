@@ -1,3 +1,4 @@
+
 import groovy.json.JsonSlurper
 
 node {
@@ -35,36 +36,15 @@ node {
     step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
 }
 
-stage name: 'Manual Tests', concurrency: 1
-def parallelStages = [:]
-parallelStages["UX Tests"] = {
-    node {
-      //deploy files
-      def warFiles = findFiles glob: '**/target/*.war'
-      for (int i=0; i<warFiles.size(); i++) {
-        deploy(warFiles[i].path)
-      }
+node {
+    //deploy files
+    stage 'Deploy'
+    def warFiles = findFiles glob: '**/target/*.war'
+    for (int i=0; i<warFiles.size(); i++) {
+    deploy(warFiles[i].path)
+}
 
-      // wait for test feedback
-      timeout(time: 5, unit: 'DAYS') {
-        input message: 'UX Tests successfull?' /*, submitter: 'qa' */
-      }
-    }
-  }
-parallelStages["Security Tests"] = {
-    node {
-      input message: 'Security Tests successfull?' /*, submitter: 'security' */
-    }
-  }
-parallel parallelStages
-
-stage 'Release'
-  node {
-    mail (to: 'tolgahan@bestcloudfor.me',
-           from: 'todehan@gmail.com',
-           subject: "Job '${env.JOB_NAME}' (${env.BUILD_NUMBER}) successfull",
-           body: "To download the artifact go to ${env.BUILD_URL}.");
-  }
+    
 
 def deploy(deploymentFileName) {
   withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'wildFlyManagementCredentials', passwordVariable: 'wildflyMgmtPassword', usernameVariable: 'wildflyMgmtUser']]) {
@@ -79,7 +59,6 @@ def deploy(deploymentFileName) {
 
     echo "Deploying ${deploymentFileName} to ${hostname}:${managementPort} ..."
 
-    // details can be found in: http://blog.arungupta.me/deploy-to-wildfly-using-curl-tech-tip-10/
     // step 1: upload archive
     sh "curl -F \"file=@${deploymentFileName}\" --digest http://${env.wildflyMgmtUser}:${env.wildflyMgmtPassword}@${hostname}:${managementPort}/management/add-content > result.txt"
 
