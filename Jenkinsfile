@@ -14,7 +14,7 @@ node {
     def mvnHome = tool name: 'maven_3.3.3', type: 'hudson.tasks.Maven$MavenInstallation'
 
     // compile and package
-    sh "cd kitchensink-angularjs/ && ${mvnHome}/bin/mvn clean install -DskipTests"
+    sh "cd kitchensink-angularjs/ && ${mvnHome}/bin/mvn clean install"
 
     // archive war file
     archive includes: '**/target/*.war'
@@ -40,11 +40,10 @@ def parallelStages = [:]
 parallelStages["UX Tests"] = {
     node {
       //deploy files
-      //def warFiles = findFiles glob: '**/target/*.war'
-      //for (int i=0; i<warFiles.size(); i++) {
-       // deploy(warFiles[i].path)
-       deploy('/var/lib/jenkins/jobs/w1/builds/26/archive/kitchensink-angularjs/target/wildfly-kitchensink-angularjs.war')
-      
+      def warFiles = findFiles glob: '**/target/*.war'
+      for (int i=0; i<warFiles.size(); i++) {
+        deploy(warFiles[i].path)
+      }
 
       // wait for test feedback
       timeout(time: 5, unit: 'DAYS') {
@@ -61,7 +60,10 @@ parallel parallelStages
 
 stage 'Release'
   node {
-    input message: 'ASAMA KONTROL'
+    mail (to: 'tolgahan@bestcloudfor.me',
+           from: 'todehan@gmail.com',
+           subject: "Job '${env.JOB_NAME}' (${env.BUILD_NUMBER}) successfull",
+           body: "To download the artifact go to ${env.BUILD_URL}.");
   }
 
 def deploy(deploymentFileName) {
