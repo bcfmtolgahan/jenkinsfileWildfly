@@ -14,6 +14,7 @@ node {
     for (int i=0; i<warFiles.size(); i++) {
     deploy(warFiles[i].path)
     }
+  echo ${warFiles[0].path}
 }
 
 def deploy(deploymentFileName) {
